@@ -50,4 +50,64 @@ So I created this simple generator to fix all of that.
 ## 🛠️ How I use it
 
 1. I write notes in Obsidian like this:
-2. 
+2. Copy the content  
+3. Paste into this tool  
+4. Click **Generate**  
+5. Preview is shown  
+6. Copy HTML  
+7. Save as `.html`
+
+Done ✅
+
+---
+
+## 📁 Output
+
+The tool generates a full HTML page with:
+
+- Clean UI
+- Proper table formatting
+- Responsive design
+
+You can directly open it in a browser or host it.
+
+---
+
+## 💡 Use Cases
+
+- DevOps notes
+- Documentation pages
+- Personal knowledge base
+- Quick static websites
+
+---
+
+## ⚠️ Notes
+
+- Tables must follow proper Markdown structure
+- Keep consistent columns in tables
+- Encoding is handled automatically
+
+---
+
+## 🔄 Workflow
+
+Obsidian → Copy → Paste → Generate → Export HTML
+
+---
+
+## 🔥 Future Improvements
+
+- Sidebar navigation (documentation style)
+- Syntax highlighting for code blocks
+- Download `.html` button
+- Dark mode
+- Multi-page support
+
+---
+
+## 📌 Final
+
+This tool helps me focus on writing content instead of worrying about HTML.
+
+Simple and fast ⚡
