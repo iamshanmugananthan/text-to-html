@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Shan Website Generator</title>
+
+<style>
+body {
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+/* PREVIEW */
+.preview {
+    max-width: 900px;
+    margin: 20px auto;
+    background: #fff;
+    padding: 20px 40px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.preview h1 { text-align: center; }
+
+.preview h2 {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.preview pre {
+    background: #f0f0f0;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.preview code {
+    background: #eee;
+    padding: 2px 4px;
+}
+
+.preview ul {
+    margin-left: 20px;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+th {
+    background: #f2f2f2;
+}
+
+/* NOTE */
+.note {
+    background: #fff3cd;
+    padding: 10px;
+    border-left: 4px solid #ffeeba;
+}
+
+/* CODE OUTPUT */
+#codeOutput {
+    height: 250px;
+    font-family: monospace;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    .preview { padding: 15px; }
+}
+</style>
+</head>
+
+<body>
+
+<h2>🚀 HTML  → Website Generator</h2>
+
+<textarea id="input" placeholder="Paste content here..."></textarea>
+
+<button onclick="generate()">Generate</button>
+<button onclick="copyHTML()">Copy HTML</button>
+
+<h3>🌐 Preview</h3>
+<div id="preview" class="preview"></div>
+
+<h3>💻 HTML Code</h3>
+<textarea id="codeOutput" readonly></textarea>
+
+<script>
+
+// Encoding fix
+function fixEncoding(text) {
+    try {
+        return decodeURIComponent(escape(text));
+    } catch {
+        return text;
+    }
+}
+
+// Inline formatting
+function formatInline(text) {
+    text = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+    text = text.replace(/\*(.*?)\*/g, "<i>$1</i>");
+    text = text.replace(/`(.*?)`/g, "<code>$1</code>");
+    return text;
+}
+
+// Table parser
+function parseTable(lines, start) {
+    let html = "<table>";
+
+    let headers = lines[start].split("|").map(x => x.trim()).filter(x => x);
+    html += "<tr>";
+    headers.forEach(h => html += "<th>" + formatInline(h) + "</th>");
+    html += "</tr>";
+
+    let i = start + 2;
+
+    while (i < lines.length && lines[i].includes("|")) {
+        let row = lines[i].split("|").map(x => x.trim()).filter(x => x);
+        html += "<tr>";
+        row.forEach(c => html += "<td>" + formatInline(c) + "</td>");
+        html += "</tr>";
+        i++;
+    }
+
+    html += "</table>";
+
+    return { html, nextIndex: i - 1 };
+}
+
+function generate() {
+
+    let text = fixEncoding(document.getElementById("input").value);
+    let lines = text.split("\n");
+
+    let content = "";
+    let inList = false;
+    let inCode = false;
+
+    for (let i = 0; i < lines.length; i++) {
+
+        let line = lines[i];
+
+        // TABLE
+        if (line.includes("|") && i + 1 < lines.length && lines[i + 1].includes("---")) {
+            let table = parseTable(lines, i);
+            content += table.html;
+            i = table.nextIndex;
+            continue;
+        }
+
+        // CODE BLOCK
+        if (line.startsWith("```")) {
+            if (!inCode) {
+                content += "<pre>";
+                inCode = true;
+            } else {
+                content += "</pre>";
+                inCode = false;
+            }
+            continue;
+        }
+
+        if (inCode) {
+            content += line + "\n";
+            continue;
+        }
+
+        // HEADINGS
+        if (line.startsWith("# ")) {
+            content += "<h1>" + formatInline(line.slice(2)) + "</h1>";
+        } 
+        else if (line.startsWith("## ")) {
+            content += "<h2>" + formatInline(line.slice(3)) + "</h2>";
+        } 
+        else if (line.startsWith("### ")) {
+            content += "<h3>" + formatInline(line.slice(4)) + "</h3>";
+        }
+
+        // LIST
+        else if (line.startsWith("- ") || line.startsWith("* ")) {
+            if (!inList) {
+                content += "<ul>";
+                inList = true;
+            }
+            content += "<li>" + formatInline(line.slice(2)) + "</li>";
+        }
+
+        // NOTE
+        else if (line.includes("💡")) {
+            content += '<div class="note"><b>' + formatInline(line) + '</b></div>';
+        }
+
+        else {
+            if (inList) {
+                content += "</ul>";
+                inList = false;
+            }
+
+            if (line.trim() === "---") {
+                content += "<hr>";
+            } 
+            else if (line.trim() !== "") {
+                content += "<p>" + formatInline(line) + "</p>";
+            }
+        }
+    }
+
+    if (inList) content += "</ul>";
+
+    // FINAL HTML
+    let finalHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generated Page</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+}
+main {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px 40px;
+    background: #fff;
+    border-radius: 6px;
+}
+h1 { text-align: center; }
+h2 { border-bottom: 1px solid #ddd; }
+
+pre {
+    background: #f0f0f0;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+code {
+    background: #eee;
+    padding: 2px 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+th { background: #f2f2f2; }
+
+.note {
+    background: #fff3cd;
+    padding: 10px;
+    border-left: 4px solid #ffeeba;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    main {
+        margin: 10px;
+        padding: 15px;
+    }
+}
+</style>
+
+</head>
+<body>
+
+<main>
+${content}
+</main>
+
+</body>
+</html>
+`;
+
+    document.getElementById("preview").innerHTML = content;
+    document.getElementById("codeOutput").value = finalHTML;
+}
+
+// COPY
+function copyHTML() {
+    navigator.clipboard.writeText(document.getElementById("codeOutput").value);
+    alert("HTML copied!");
+}
+
+</script>
+
+</body>
+</html>
